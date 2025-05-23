@@ -17,10 +17,12 @@ import (
 
 func Start() {
 
+	// Конфигурации
 	cfgHTTP := &types.ConfigHTTP{}
 	cfgPostgres := &types.ConfigPostgres{}
 	cfgConnPostgres := &types.ConfigConnPostgres{}
 
+	// Подгружаем конфигурации
 	err := config.GetConfigsENV("./", ".env", []any{
 		cfgHTTP,
 		cfgPostgres,
@@ -30,6 +32,7 @@ func Start() {
 		log.Fatal(err)
 	}
 
+	// Подключаем все зависимости
 	syst, err := system.New(
 		cfgConnPostgres,
 		cfgPostgres,
@@ -38,14 +41,18 @@ func Start() {
 		log.Fatal(err)
 	}
 
+	// Создаем репозиторий
 	repo := repository.New(syst)
 
+	// Создвние сервисов
 	serv := service.New(repo)
 
+	// Создаем HTTP сервер
 	srvHTTP := server.New(
 		cfgHTTP.Port,
 	)
 
+	// Создаем HTTP роутер
 	routerHTTP := routerHTTP.New(
 		handler.New(
 			serv,
@@ -53,9 +60,11 @@ func Start() {
 		),
 	)
 
+	// Канал завершения
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 
+	// Запускаем HTTP сервер
 	if err := srvHTTP.Start(c, routerHTTP.InitRoutes()); err != nil {
 		log.Fatal(err)
 	}

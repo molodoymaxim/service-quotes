@@ -22,7 +22,7 @@ func (t *psql) GetAll(ctx context.Context, author string) ([]types.Quote, error)
 
 	for rows.Next() {
 		var q types.Quote
-		err := rows.Scan(&q.ID, &q.Author, &q.Text)
+		err := rows.Scan(&q.ID, &q.Author, &q.Quote)
 		if err != nil {
 			return nil, err
 		}
