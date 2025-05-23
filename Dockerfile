@@ -1,14 +1,14 @@
-# Сборка
-FROM golang:1.22
-WORKDIR /app
-COPY ./go.mod ./go.sum ./
-RUN go mod download
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o quotes-service ./cmd/main.go
+FROM golang:1.23-alpine
 
-# Запуск
-FROM alpine:3.20.3
 WORKDIR /app
-COPY --from=builder /app/service-quotes .
-EXPOSE 8080
-ENTRYPOINT ["./quotes-service"]
+
+COPY go.mod ./
+COPY go.sum ./
+RUN go mod download
+
+COPY . .
+
+# Сборка приложения
+RUN go build -o service_quote ./cmd/main.go
+
+CMD ["/app/service_quote"]
