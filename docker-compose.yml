@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      retries: 5
+
+
+  migrate:
+    image: migrate/migrate:v4.15.2
+    container_name: migrate
+    depends_on:
+      - postgres
+    volumes:
+      - ./pkg/migrations:/migrations
+    command:
+      - "-path=/migrations"
+      - "-database=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
+      - "up"
+    restart: "no"
+    env_file:
+      - .env
+
+  service_quote:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: service_quote
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      DB_MAX_CONN_PS: ${DB_MAX_CONN_PS}
+      DB_CONN_IDLE_TIME_PS: ${DB_CONN_IDLE_TIME_PS}
+      DB_CONN_LIFE_TIME_PS: ${DB_CONN_LIFE_TIME_PS}
+      DB_QUERY_TIMEOUT_PS: ${DB_QUERY_TIMEOUT_PS}
+
+volumes:
+  postgres_data:
