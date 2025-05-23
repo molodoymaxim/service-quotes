@@ -14,7 +14,7 @@ func (t *psql) GetRandom(ctx context.Context) (*types.Quote, error) {
 
 	row := t.db.QueryRow(ctx, query)
 
-	err := row.Scan(&quote.ID, &quote.Author, &quote.Text)
+	err := row.Scan(&quote.ID, &quote.Author, &quote.Quote)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("no random quote found")
